@@ -1,0 +1,206 @@
+<head>
+    <title>Your Title Here</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js"></script>
+    <style>
+        .container {
+            display: flex;
+        }
+
+        .left-column {
+            width: 25%;
+        }
+
+        .right-column {
+            width: 75%;
+        }
+    </style>
+    <script>
+        //Blocking delay
+        function sleep(ms) {
+            start = Date.now();
+            while (Date.now() < start + ms) { }
+            return;
+        }
+        function getAstralBodies() {
+            var astralBodies = [];
+            var astralBodyElements = document.querySelectorAll('.astral-body');
+
+            astralBodyElements.forEach(function (element) {
+                var massInput = element.querySelector('input[type="number"][placeholder="Mass"]');
+                var v0xInput = element.querySelector('input[type="number"][placeholder="v0x"]');
+                var v0yInput = element.querySelector('input[type="number"][placeholder="v0y"]');
+                var v0zInput = element.querySelector('input[type="number"][placeholder="v0z"]');
+                var x0Input = element.querySelector('input[type="number"][placeholder="x0"]');
+                var y0Input = element.querySelector('input[type="number"][placeholder="y0"]');
+                var z0Input = element.querySelector('input[type="number"][placeholder="z0"]');
+                var x0 = parseInt(x0Input.value);
+                var y0 = parseInt(y0Input.value);
+                var z0 = parseInt(z0Input.value);
+                var mass = parseInt(massInput.value);
+                var v0x = parseInt(v0xInput.value);
+                var v0y = parseInt(v0yInput.value);
+                var v0z = parseInt(v0zInput.value);
+
+                astralBodies.push([mass, v0x, v0y, v0z, x0, y0, z0, 0, 0, 0]);
+            });
+
+            return astralBodies;
+        }
+        function computeMovement(bodies, dt) {
+            var G = 6.67430e-11;
+            var bodies_updated = []
+            bodies.forEach(function (body) {
+                var mass = body[0];
+                var vx = body[1];
+                var vy = body[2];
+                var vz = body[3];
+                var x = body[4];
+                var y = body[5];
+                var z = body[6];
+                var ax = 0;
+                var ay = 0;
+                var az = 0;
+                // Compute the acceleration for the body at the current time step
+                // Compute the acceleration due to gravitational forces from other bodies
+                bodies.forEach(function (otherBody) {
+                    if (otherBody !== body) {
+                        var otherMass = otherBody[0];
+                        var otherX = otherBody[4];
+                        var otherY = otherBody[5];
+                        var otherZ = otherBody[6];
+
+                        // Compute the distance between the bodies
+                        var dx = otherX - x;
+                        var dy = otherY - y;
+                        var dz = otherZ - z;
+                        var distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+                        // Compute the gravitational force between the bodies
+                        var force = (G * mass * otherMass) / (distance * distance);
+                        console.log(force);
+
+                        // Compute the acceleration components. 
+                        ax += (force / mass) * (dx / distance);
+                        ay += (force / mass) * (dy / distance);
+                        az += (force / mass) * (dz / distance);
+                    }
+                });
+                // Update the velocity of the body
+                vx += ax * dt;
+                vy += ay * dt;
+                vz += az * dt;
+                // Update the position of the body
+                x += vx * dt;
+                y += vy * dt;
+                z += vz * dt;
+                bodies_updated.push([mass, vx, vy, vz, x, y, z, ax, ay, az]);
+            })
+            return bodies_updated;
+        }
+        function displayResults(results) {
+            // Display the results in the canvas
+            // The canvas should display the positions of the bodies at each time step following the time input values
+            // The canvas should be cleared and updated for each time step
+            var canvas = document.getElementById('simulationCanvas');
+            var ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            var totalTimeInput = document.getElementById('totalTime');
+            var timeStepsInput = document.getElementById('timeSteps');
+            var totalTime = totalTimeInput.value;
+            var timeSteps = timeStepsInput.value
+            var dt = totalTime / timeSteps;
+            console.log(dt);
+            var results = getAstralBodies();
+            var t=0
+            function drawFrame() {
+                console.log(t);
+                results = computeMovement(results, dt);
+                results.forEach(function (body) {
+                    var x = body[4];
+                    var y = body[5];
+                    var z = body[6];
+
+                    // Draw the body at the current position
+                    ctx.beginPath();
+                    ctx.arc(x, y, 5, 0, 2 * Math.PI);
+                    ctx.fill();
+                    console.log(x, y, z);
+                });
+                t+=dt;
+                if (t < totalTime) {
+                    // Schedule the next frame
+                    setTimeout(drawFrame, dt * 1000);
+                }
+            }
+
+            // Start the animation
+            drawFrame();
+        }
+    </script>
+</head>
+
+<body>
+    <h1>Simulation du problème à N corps</h1>
+    <div class="container">
+        <div class="left-column">
+            <label for="totalTime">Total Time:</label>
+            <input type="number" id="totalTime" placeholder="Total Time">
+
+            <label for="timeSteps">Number of Timesteps:</label>
+            <input type="number" id="timeSteps" placeholder="Number of Timesteps">
+            <!-- Add bodies and set their properties here -->
+            <button onclick="addAstralBody()">Add Astral Body</button>
+
+            <script>
+                function addAstralBody() {
+                    var container = document.querySelector('.left-column');
+
+                    var astralBody = document.createElement('div');
+                    astralBody.classList.add('astral-body');
+
+                    var massInput = document.createElement('input');
+                    massInput.type = 'number';
+                    massInput.placeholder = 'Mass';
+
+                    var v0xInput = document.createElement('input');
+                    v0xInput.type = 'number';
+                    v0xInput.placeholder = 'v0x';
+
+                    var v0yInput = document.createElement('input');
+                    v0yInput.type = 'number';
+                    v0yInput.placeholder = 'v0y';
+
+                    var v0zInput = document.createElement('input');
+                    v0zInput.type = 'number';
+                    v0zInput.placeholder = 'v0z';
+                    var xInput = document.createElement('input');
+                    xInput.type = 'number';
+                    xInput.placeholder = 'x0';
+
+                    var yInput = document.createElement('input');
+                    yInput.type = 'number';
+                    yInput.placeholder = 'y0';
+
+                    var zInput = document.createElement('input');
+                    zInput.type = 'number';
+                    zInput.placeholder = 'z0';
+
+                    astralBody.appendChild(xInput);
+                    astralBody.appendChild(yInput);
+                    astralBody.appendChild(zInput);
+                    astralBody.appendChild(massInput);
+                    astralBody.appendChild(v0xInput);
+                    astralBody.appendChild(v0yInput);
+                    astralBody.appendChild(v0zInput);
+
+                    container.appendChild(astralBody);
+                }
+            </script>
+        </div>
+        <div class="right-column">
+            <button onclick="displayResults()">Display Results</button>
+            <!-- Place the simulation or other content here -->
+            <canvas id="simulationCanvas" width="800" height="600"></canvas>
+        </div>
+    </div>
